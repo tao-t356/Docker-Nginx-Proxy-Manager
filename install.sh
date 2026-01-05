@@ -6,6 +6,7 @@
 # 邮箱: tao356334@gmail.com
 # ==========================================
 
+
 # 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -21,12 +22,16 @@ fi
 
 # 自动配置别名函数
 setup_alias() {
-    if ! grep -q "alias npm=" ~/.bashrc; then
+    # 移除旧的 npm 别名防止冲突
+    sed -i '/alias npm=/d' ~/.bashrc
+    
+    # 检查并添加新的 n 别名
+    if ! grep -q "alias n=" ~/.bashrc; then
         cp "$0" /usr/local/bin/npm_tool.sh
         chmod +x /usr/local/bin/npm_tool.sh
-        echo "alias npm='bash /usr/local/bin/npm_tool.sh'" >> ~/.bashrc
-        echo -e "${GREEN}快捷命令已配置！以后只需输入 ${YELLOW}npm${GREEN} 即可打开此菜单。${NC}"
-        source ~/.bashrc 2>/dev/null
+        echo "alias n='bash /usr/local/bin/npm_tool.sh'" >> ~/.bashrc
+        echo -e "${GREEN}快捷命令已配置！以后只需输入 ${YELLOW}n${GREEN} 即可打开此菜单。${NC}"
+        echo -e "${YELLOW}请执行 'source ~/.bashrc' 或重新连接终端以激活快捷键。${NC}"
     fi
 }
 
@@ -34,15 +39,15 @@ setup_alias() {
 show_menu() {
     clear
     echo -e "${CYAN}==================================================${NC}"
-    echo -e "${CYAN}       Nginx Proxy Manager 综合管理脚本           ${NC}"
-    echo -e "${CYAN}               作者: Facker668                    ${NC}"
-    echo -e "${CYAN}               Email: tao356334@gmail.com         ${NC}"
+    echo -e "${CYAN}        Nginx Proxy Manager 综合管理脚本           ${NC}"
     echo -e "${CYAN}==================================================${NC}"
     echo -e "${GREEN}  1.${NC} 安装 Docker 环境"
     echo -e "${GREEN}  2.${NC} 安装 Nginx Proxy Manager (NPM)"
     echo -e "${GREEN}  3.${NC} 卸载 Nginx Proxy Manager (NPM)"
     echo -e "${GREEN}  4.${NC} 卸载 Docker 环境"
     echo -e "${RED}  0.${NC} 退出脚本"
+    echo -e "${CYAN}==================================================${NC}"
+    echo -e "${YELLOW}快捷键说明: 以后在任何地方输入 ${RED}n${YELLOW} 即可再次进入此菜单${NC}"
     echo -e "${CYAN}==================================================${NC}"
     read -p "请输入选项 [0-4]: " choice
 }
@@ -84,6 +89,8 @@ EOF
     if [ $? -eq 0 ]; then
         IP=$(curl -s ifconfig.me)
         echo -e "${GREEN}NPM 安装成功！管理地址: http://${IP}:81${NC}"
+        echo -e "${YELLOW}初始账号: admin@example.com${NC}"
+        echo -e "${YELLOW}初始密码: changeme${NC}"
     else
         echo -e "${RED}安装失败。${NC}"
     fi
@@ -95,7 +102,7 @@ uninstall_npm() {
         echo -e "${YELLOW}正在停止并清理 NPM...${NC}"
         if [ -d "/opt/npm" ]; then
             cd /opt/npm && docker compose down
-            rm -rf /opt/npm
+            cd / && rm -rf /opt/npm
             echo -e "${GREEN}NPM 已成功卸载，数据目录 /opt/npm 已删除。${NC}"
         else
             echo -e "${RED}未发现安装目录 /opt/npm。${NC}"
@@ -104,7 +111,7 @@ uninstall_npm() {
 }
 
 uninstall_docker() {
-    read -p "确定要彻底卸载 Docker 环境并移除 npm 快捷命令吗? (y/n): " confirm
+    read -p "确定要彻底卸载 Docker 环境并移除 n 快捷命令吗? (y/n): " confirm
     if [ "$confirm" == "y" ]; then
         echo -e "${YELLOW}正在清理环境...${NC}"
         # 卸载 Docker
@@ -114,13 +121,16 @@ uninstall_docker() {
             yum remove -y docker-ce docker-ce-cli containerd.io
         fi
         # 移除别名
-        sed -i '/alias npm=/d' ~/.bashrc
+        sed -i '/alias n=/d' ~/.bashrc
         rm -f /usr/local/bin/npm_tool.sh
-        echo -e "${GREEN}Docker 已卸载，npm 快捷命令已移除。${NC}"
+        echo -e "${GREEN}Docker 已卸载，n 快捷命令已移除。${NC}"
     fi
 }
 
+# 脚本启动时自动配置别名
 setup_alias
+
+# 主循环
 while true; do
     show_menu
     case $choice in
