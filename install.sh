@@ -90,13 +90,13 @@ docker compose up -d
 
 if [ $? -eq 0 ]; then
     IP=$(curl -s ifconfig.me)
-    echo -e "\n${CYAN}==================================================${NC}"
-    echo -e "${GREEN}        🎉 恭喜！安装已全部完成！${NC}"
+echo -e "\n${CYAN}==================================================${NC}"
+    echo -e "${GREEN}        🎉 恭喜！Nginx Proxy Manager 安装成功！${NC}"
     echo -e "${CYAN}==================================================${NC}"
     echo -e "作者: ${YELLOW}Facker668${NC}"
     echo -e "管理地址: ${GREEN}http://${IP}:81${NC}"
-    echo -e "默认邮箱: ${YELLOW}admin@example.com${NC}"
-    echo -e "默认密码: ${YELLOW}changeme${NC}"
+    echo -e "${YELLOW}首次登录提示：${NC}"
+    echo -e "新版本 NPM 请直接在网页前端创建您的管理员账号、邮箱和密码。"
     echo -e "${CYAN}==================================================${NC}"
 else
     echo -e "${RED}启动失败，请检查 Docker 日志。${NC}"
