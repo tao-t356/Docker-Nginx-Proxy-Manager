@@ -22,7 +22,7 @@
 
 在您的 VPS 终端复制并粘贴以下命令：
 
-\`\`\`bash
+```bash
 wget -qO n https://raw.githubusercontent.com/tao-t356/Docker-Nginx-Proxy-Manager/main/install.sh && bash n
 
 ---
