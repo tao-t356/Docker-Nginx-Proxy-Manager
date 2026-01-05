@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # ==========================================
-# 项目: Nginx Proxy Manager 综合管理脚本 (标准版)
-# 特点: 强制 Root 检测，不修改系统别名
+# 项目: Nginx Proxy Manager 综合管理脚本
+# 作者: Facker668
+# 说明: 需 Root 权限，不修改系统别名，纯净运行
 # ==========================================
 
 # 颜色定义
@@ -15,7 +16,7 @@ NC='\033[0m'
 # 核心检查：必须是 Root 才能运行
 if [ "$EUID" -ne 0 ]; then 
   echo -e "${RED}错误：此脚本必须使用 root 权限运行！${NC}"
-  echo -e "${YELLOW}请尝试使用 'sudo bash $0' 或切换到 root 用户再运行。${NC}"
+  echo -e "${YELLOW}请尝试使用 'sudo bash $0' 运行。${NC}"
   exit 1
 fi
 
@@ -24,6 +25,7 @@ show_menu() {
     clear
     echo -e "${CYAN}==================================================${NC}"
     echo -e "${CYAN}        Nginx Proxy Manager 综合管理脚本           ${NC}"
+    echo -e "${CYAN}                作者: Facker668                   ${NC}"
     echo -e "${CYAN}==================================================${NC}"
     echo -e "${GREEN}  1.${NC} 安装 Docker 环境"
     echo -e "${GREEN}  2.${NC} 安装 Nginx Proxy Manager (NPM)"
@@ -34,6 +36,7 @@ show_menu() {
     read -p "请输入选项 [0-4]: " choice
 }
 
+# 1. 安装 Docker
 install_docker() {
     echo -e "\n${YELLOW}正在检查并安装 Docker...${NC}"
     if ! command -v docker &> /dev/null; then
@@ -45,6 +48,7 @@ install_docker() {
     fi
 }
 
+# 2. 安装 NPM
 install_npm() {
     if ! command -v docker &> /dev/null; then
         echo -e "${RED}错误：请先执行选项 1 安装 Docker 环境！${NC}"
@@ -69,42 +73,45 @@ EOF
     docker compose up -d
     if [ $? -eq 0 ]; then
         IP=$(curl -s ifconfig.me)
-        echo -e "${GREEN}NPM 安装成功！管理地址: http://${IP}:81${NC}"
-        echo -e "${YELLOW}初始账号: admin@example.com${NC}"
-        echo -e "${YELLOW}初始密码: changeme${NC}"
+        echo -e "${GREEN}NPM 安装成功！${NC}"
+        echo -e "${CYAN}管理地址: http://${IP}:81${NC}"
+        echo -e "${YELLOW}默认账号: admin@example.com${NC}"
+        echo -e "${YELLOW}默认密码: changeme${NC}"
     else
-        echo -e "${RED}安装失败。请检查 80/81/443 端口是否被占用。${NC}"
+        echo -e "${RED}安装失败。请检查端口 80/81/443 是否被占用。${NC}"
     fi
 }
 
+# 3. 卸载 NPM
 uninstall_npm() {
     read -p "确定要彻底卸载 NPM 并删除所有数据吗? (y/n): " confirm
     if [ "$confirm" == "y" ]; then
-        echo -e "${YELLOW}正在停止并清理 NPM...${NC}"
+        echo -e "${YELLOW}正在停止并清理 NPM 容器...${NC}"
         if [ -d "/opt/npm" ]; then
             cd /opt/npm && docker compose down
             cd / && rm -rf /opt/npm
-            echo -e "${GREEN}NPM 已成功卸载，数据已清空。${NC}"
+            echo -e "${GREEN}NPM 已成功卸载，/opt/npm 目录已删除。${NC}"
         else
             echo -e "${RED}未发现安装目录 /opt/npm。${NC}"
         fi
     fi
 }
 
+# 4. 卸载 Docker
 uninstall_docker() {
-    read -p "确定彻底卸载 Docker 环境吗? (y/n): " confirm
+    read -p "确定要彻底卸载 Docker 环境吗? (y/n): " confirm
     if [ "$confirm" == "y" ]; then
-        echo -e "${YELLOW}正在卸载 Docker...${NC}"
+        echo -e "${YELLOW}正在卸载 Docker 相关组件...${NC}"
         if [ -f /etc/debian_version ]; then
             apt-get purge -y docker-ce docker-ce-cli containerd.io && apt-get autoremove -y
         else
             yum remove -y docker-ce docker-ce-cli containerd.io
         fi
-        echo -e "${GREEN}Docker 已成功卸载。${NC}"
+        echo -e "${GREEN}Docker 卸载操作已完成。${NC}"
     fi
 }
 
-# --- 启动逻辑 ---
+# --- 脚本执行入口 ---
 
 while true; do
     show_menu
@@ -114,7 +121,7 @@ while true; do
         3) uninstall_npm ;;
         4) uninstall_docker ;;
         0) exit 0 ;;
-        *) echo -e "${RED}无效选项！${NC}" ;;
+        *) echo -e "${RED}无效选项，请重新输入！${NC}" ;;
     esac
     read -p "按回车键返回主菜单..."
 done
