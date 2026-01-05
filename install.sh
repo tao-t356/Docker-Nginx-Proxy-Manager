@@ -4,7 +4,7 @@
 # 项目名称: Nginx Proxy Manager 综合管理脚本
 # 项目作者: facker668
 # 联系邮箱: tao356334@gmail.com
-# 项目特点: 强制 Root 检测，适配新版 NPM 初始化创建流程
+# 项目地址: https://github.com/tao-t356/Docker-Nginx-Proxy-Manager
 # ========================================================
 
 # 颜色定义
@@ -54,7 +54,6 @@ install_npm() {
         return
     fi
 
-    # 预检查端口占用 (80, 81, 443)
     echo -e "${YELLOW}正在检查端口占用情况...${NC}"
     for port in 80 81 443; do
         if command -v lsof &> /dev/null; then
@@ -83,7 +82,12 @@ services:
       - ./letsencrypt:/etc/letsencrypt
 EOF
 
-    docker compose up -d
+    # 兼容性处理
+    if docker compose version >/dev/null 2>&1; then
+        docker compose up -d
+    else
+        docker-compose up -d
+    fi
     
     if [ $? -eq 0 ]; then
         IP=$(curl -s --connect-timeout 5 ifconfig.me || echo "您的服务器IP")
@@ -94,11 +98,11 @@ EOF
         echo -e ""
         echo -e "${GREEN}首次登录指引：${NC}"
         echo -e " 1. 请在浏览器中访问上方管理地址"
-        echo -e " 2. 系统将引导您${YELLOW}创建管理员账号${NC}（姓名、邮箱和密码）"
-        echo -e " 3. 请务必妥善记录您自己设置的凭据"
+        echo -e " 2. 系统将引导您${YELLOW}直接创建${NC}管理员账号"
+        echo -e " 3. 请妥善保管您设置的邮箱和密码"
         echo -e "${CYAN}==================================================${NC}"
     else
-        echo -e "${RED}安装失败。请检查网络连接或确保 80/81/443 端口未被占用。${NC}"
+        echo -e "${RED}安装失败。请检查 80/81/443 端口是否开放。${NC}"
     fi
 }
 
@@ -107,9 +111,10 @@ uninstall_npm() {
     if [ "$confirm" == "y" ]; then
         echo -e "${YELLOW}正在停止并清理 NPM...${NC}"
         if [ -d "/opt/npm" ]; then
-            cd /opt/npm && docker compose down
+            cd /opt/npm
+            if docker compose version >/dev/null 2>&1; then docker compose down; else docker-compose down; fi
             cd / && rm -rf /opt/npm
-            echo -e "${GREEN}NPM 已成功卸载，数据已清空。${NC}"
+            echo -e "${GREEN}NPM 已成功卸载。${NC}"
         else
             echo -e "${RED}未发现安装目录 /opt/npm。${NC}"
         fi
@@ -129,8 +134,6 @@ uninstall_docker() {
     fi
 }
 
-# --- 启动逻辑 ---
-
 while true; do
     show_menu
     case $choice in
@@ -138,8 +141,8 @@ while true; do
         2) install_npm ;;
         3) uninstall_npm ;;
         4) uninstall_docker ;;
-        0) echo -e "${GREEN}感谢使用，再见！${NC}"; exit 0 ;;
-        *) echo -e "${RED}无效选项，请输入 0-4 之间的数字！${NC}" ;;
+        0) echo -e "${GREEN}感谢使用！${NC}"; exit 0 ;;
+        *) echo -e "${RED}无效选项！${NC}" ;;
     esac
     echo ""
     read -p "按回车键返回主菜单..." dummy
