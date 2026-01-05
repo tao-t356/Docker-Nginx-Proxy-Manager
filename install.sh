@@ -2,10 +2,8 @@
 
 # ==========================================
 # 项目: Nginx Proxy Manager 综合管理脚本
-# 作者: Facker668
-# 邮箱: tao356334@gmail.com
+# 修改: 优化卸载提示, 调整选项5颜色
 # ==========================================
-
 
 # 颜色定义
 RED='\033[0;31m'
@@ -41,7 +39,7 @@ setup_alias() {
 
     if [ "$alias_added" = true ]; then
         echo -e "${GREEN}[配置成功]${NC} 快捷键 ${RED}f${NC} 已写入系统。"
-        echo -e "${YELLOW}[注意]${NC} 若快捷键未生效，请执行：${CYAN}source ~/.bashrc${NC}"
+        echo -e "${YELLOW}[提示]${NC} 若快捷键未生效，请执行：${CYAN}source ~/.bashrc${NC}"
         echo -e "${CYAN}--------------------------------------------------${NC}"
         sleep 1
     fi
@@ -56,9 +54,9 @@ show_menu() {
     echo -e "${GREEN}  1.${NC} 安装 Docker 环境"
     echo -e "${GREEN}  2.${NC} 安装 Nginx Proxy Manager (NPM)"
     echo -e "${GREEN}  3.${NC} 卸载 Nginx Proxy Manager (NPM)"
-    echo -e "${GREEN}  4.${NC} 卸载 Docker 环境 (保留快捷键)"
-    echo -e "${RED}  5. 删除快捷键 f (彻底清理脚本)${NC}"
-    echo -e "${GREEN}  0.${NC} 退出脚本"
+    echo -e "${GREEN}  4.${NC} 卸载 Docker 环境"
+    echo -e "${NC}  5.${NC} 删除快捷键 f (彻底清理脚本)"
+    echo -e "${RED}  0.${NC} 退出脚本"
     echo -e "${CYAN}==================================================${NC}"
     echo -e "${YELLOW}快捷键状态: ${RED}f${NC}"
     echo -e "${CYAN}==================================================${NC}"
@@ -121,7 +119,7 @@ uninstall_npm() {
 }
 
 uninstall_docker() {
-    read -p "确定要彻底卸载 Docker 环境吗? (快捷键 f 将会被保留) (y/n): " confirm
+    read -p "确定直接卸载 Docker 环境吗? (y/n): " confirm
     if [ "$confirm" == "y" ]; then
         echo -e "${YELLOW}正在卸载 Docker...${NC}"
         if [ -f /etc/debian_version ]; then
@@ -129,20 +127,17 @@ uninstall_docker() {
         else
             yum remove -y docker-ce docker-ce-cli containerd.io
         fi
-        echo -e "${GREEN}Docker 已卸载。${NC}"
+        echo -e "${GREEN}Docker 已成功卸载。${NC}"
     fi
 }
 
 remove_f_alias() {
-    read -p "确定要删除快捷键 f 并移除脚本文件吗? (y/n): " confirm
+    read -p "确定要彻底删除快捷键 f 并移除脚本吗? (y/n): " confirm
     if [ "$confirm" == "y" ]; then
-        # 1. 移除别名配置
         sed -i '/alias f=/d' ~/.bashrc
-        # 2. 删除系统路径下的脚本
         rm -f /usr/local/bin/npm_tool.sh
-        echo -e "${GREEN}快捷键 f 已成功删除，脚本文件已移除。${NC}"
-        echo -e "${YELLOW}提示：当前的 shell 会话中 f 可能仍然有效，重新连接或执行 'unalias f' 即可彻底消失。${NC}"
-        sleep 2
+        echo -e "${GREEN}彻底清理完成。${NC}"
+        sleep 1
         exit 0
     fi
 }
