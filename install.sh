@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# ==========================================
-# 项目: Nginx Proxy Manager 综合管理脚本
-# 修改: 优化卸载提示, 调整选项5颜色
-# ==========================================
+
 
 # 颜色定义
 RED='\033[0;31m'
@@ -134,15 +131,18 @@ uninstall_docker() {
 remove_f_alias() {
     read -p "确定要彻底删除快捷键 f 并移除脚本吗? (y/n): " confirm
     if [ "$confirm" == "y" ]; then
+        # 移除别名
         sed -i '/alias f=/d' ~/.bashrc
+        # 删除系统中的脚本副本
         rm -f /usr/local/bin/npm_tool.sh
         echo -e "${GREEN}彻底清理完成。${NC}"
-        sleep 1
+        # 尝试清理当前会话别名并退出
+        unalias f 2>/dev/null
         exit 0
     fi
 }
 
-# --- 脚本启动逻辑 ---
+# --- 启动逻辑 ---
 
 setup_alias
 
