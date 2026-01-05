@@ -24,7 +24,6 @@
 
 \`\`\`bash
 wget -qO n https://raw.githubusercontent.com/tao-t356/Docker-Nginx-Proxy-Manager/main/install.sh && bash n
-\`\`\`
 
 ---
 
