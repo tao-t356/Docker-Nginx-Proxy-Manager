@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==========================================
-# 项目: Nginx Proxy Manager 一键安装脚本
+# 项目: Nginx Proxy Manager 综合管理脚本
 # 作者: Facker668
 # ==========================================
 
@@ -12,63 +12,49 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-clear
-echo -e "${CYAN}==================================================${NC}"
-echo -e "${CYAN}       Nginx Proxy Manager 一键安装工具           ${NC}"
-echo -e "${CYAN}               作者: Facker668                    ${NC}"
-echo -e "${CYAN}==================================================${NC}"
-echo -e "${YELLOW}[免责声明]${NC}"
-echo -e "1. 本脚本仅供学习和研究使用，作者不对使用本脚本造成的"
-echo -e "   任何数据丢失、系统故障或安全问题负责。"
-echo -e "2. 运行此脚本即表示您同意以上条款。"
-echo -e "${CYAN}==================================================${NC}"
-read -p "是否继续安装? (y/n): " confirm
-if [ "$confirm" != "y" ]; then
-    echo -e "${RED}安装已取消。${NC}"
-    exit 1
-fi
-
-# 1. 检查 Root 权限
-echo -e "\n${YELLOW}[步骤 1/6] 权限检查...${NC}"
+# 检查 Root 权限
 if [ "$EUID" -ne 0 ]; then 
   echo -e "${RED}错误：请使用 root 用户运行。${NC}"
   exit 1
 fi
-echo -e "${GREEN}权限检查通过！${NC}"
 
-# 2. 系统环境检测
-echo -e "\n${YELLOW}[步骤 2/6] 系统环境检测...${NC}"
-if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    OS=$ID
-    echo -e "${GREEN}检测到系统: $NAME${NC}"
-else
-    echo -e "${RED}无法识别系统版本。${NC}"
-    exit 1
-fi
+# 菜单主界面
+show_menu() {
+    clear
+    echo -e "${CYAN}==================================================${NC}"
+    echo -e "${CYAN}       Nginx Proxy Manager 综合管理脚本           ${NC}"
+    echo -e "${CYAN}               作者: Facker668                    ${NC}"
+    echo -e "${CYAN}==================================================${NC}"
+    echo -e "${GREEN}  1.${NC} 安装 Docker 环境"
+    echo -e "${GREEN}  2.${NC} 安装 Nginx Proxy Manager (NPM)"
+    echo -e "${GREEN}  3.${NC} 卸载 Nginx Proxy Manager (NPM)"
+    echo -e "${GREEN}  4.${NC} 卸载 Docker 环境"
+    echo -e "${RED}  0.${NC} 退出脚本"
+    echo -e "${CYAN}==================================================${NC}"
+    read -p "请输入选项 [0-4]: " choice
+}
 
-# 3. 安装基础依赖
-echo -e "\n${YELLOW}[步骤 3/6] 安装依赖 (curl, wget)...${NC}"
-if [[ "$OS" == "ubuntu" || "$OS" == "debian" ]]; then
-    apt-get update -y && apt-get install -y curl wget
-else
-    yum install -y curl wget
-fi
+# --- 功能函数 ---
 
-# 4. Docker 环境检查与安装
-echo -e "\n${YELLOW}[步骤 4/6] 检查 Docker 环境...${NC}"
-if ! command -v docker &> /dev/null; then
-    echo -e "${CYAN}正在安装 Docker...${NC}"
-    curl -fsSL https://get.docker.com | sh
-    systemctl enable --now docker
-else
-    echo -e "${GREEN}Docker 已存在，跳过安装。${NC}"
-fi
+install_docker() {
+    echo -e "\n${YELLOW}正在检查并安装 Docker...${NC}"
+    if ! command -v docker &> /dev/null; then
+        curl -fsSL https://get.docker.com | sh
+        systemctl enable --now docker
+        echo -e "${GREEN}Docker 安装完成！${NC}"
+    else
+        echo -e "${YELLOW}Docker 已存在，跳过安装。${NC}"
+    fi
+}
 
-# 5. 配置工作目录
-echo -e "\n${YELLOW}[步骤 5/6] 准备配置文件...${NC}"
-mkdir -p /opt/npm && cd /opt/npm
-cat <<EOF > docker-compose.yml
+install_npm() {
+    if ! command -v docker &> /dev/null; then
+        echo -e "${RED}错误：请先执行选项 1 安装 Docker 环境！${NC}"
+        return
+    fi
+    echo -e "\n${YELLOW}开始安装 Nginx Proxy Manager...${NC}"
+    mkdir -p /opt/npm && cd /opt/npm
+    cat <<EOF > docker-compose.yml
 version: '3.8'
 services:
   app:
@@ -82,22 +68,42 @@ services:
       - ./data:/data
       - ./letsencrypt:/etc/letsencrypt
 EOF
-echo -e "${GREEN}配置文件已生成在 /opt/npm${NC}"
-
-# 6. 启动服务
-echo -e "\n${YELLOW}[步骤 6/6] 启动 Nginx Proxy Manager...${NC}"
-docker compose up -d
-
-if [ $? -eq 0 ]; then
+    docker compose up -d
     IP=$(curl -s ifconfig.me)
-echo -e "\n${CYAN}==================================================${NC}"
-    echo -e "${GREEN}        🎉 恭喜！Nginx Proxy Manager 安装成功！${NC}"
-    echo -e "${CYAN}==================================================${NC}"
-    echo -e "作者: ${YELLOW}Facker668${NC}"
-    echo -e "管理地址: ${GREEN}http://${IP}:81${NC}"
-    echo -e "${YELLOW}首次登录提示：${NC}"
-    echo -e "新版本 NPM 请直接在网页前端创建您的管理员账号、邮箱和密码。"
-    echo -e "${CYAN}==================================================${NC}"
-else
-    echo -e "${RED}启动失败，请检查 Docker 日志。${NC}"
-fi
+    echo -e "${GREEN}NPM 安装成功！管理地址: http://${IP}:81${NC}"
+}
+
+uninstall_npm() {
+    read -p "确定要彻底卸载 NPM 并删除所有数据吗? (y/n): " confirm
+    if [ "$confirm" == "y" ]; then
+        cd /opt/npm 2>/dev/null && docker compose down
+        rm -rf /opt/npm
+        echo -e "${GREEN}NPM 已成功卸载，数据已删除。${NC}"
+    fi
+}
+
+uninstall_docker() {
+    read -p "确定要卸载 Docker 环境吗? (y/n): " confirm
+    if [ "$confirm" == "y" ]; then
+        if [ -f /etc/debian_version ]; then
+            apt-get purge -y docker-ce docker-ce-cli containerd.io
+        else
+            yum remove -y docker-ce docker-ce-cli containerd.io
+        fi
+        echo -e "${GREEN}Docker 已卸载。${NC}"
+    fi
+}
+
+# --- 循环逻辑 ---
+while true; do
+    show_menu
+    case $choice in
+        1) install_docker ;;
+        2) install_npm ;;
+        3) uninstall_npm ;;
+        4) uninstall_docker ;;
+        0) exit 0 ;;
+        *) echo -e "${RED}无效选项，请重新输入！${NC}" ;;
+    esac
+    read -p "按回车键返回主菜单..."
+done
