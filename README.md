@@ -40,9 +40,7 @@ npm
 * **管理地址**: `http://您的IP:81`
 * **初始化**: 首次访问请直接根据页面提示创建管理员账号。
 
-> [!IMPORTANT]
-> **如果您是纯 IPv6 用户且本地无法访问：**
-> 请在 Cloudflare 添加 AAAA 记录指向您的 IP，并开启 **小云朵 (Proxy)**。建议配合 Cloudflare Origin Rules 转发 81 端口。
+
 
 ---
 
