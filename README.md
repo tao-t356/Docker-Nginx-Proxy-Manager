@@ -32,7 +32,7 @@ wget -qO n https://raw.githubusercontent.com/tao-t356/Docker-Nginx-Proxy-Manager
 ### 1. 快捷菜单
 安装完成后，您不再需要运行长命令，只需输入以下字母并回车：
 ```bash
-npm
+觉得没有必要，已取消
 ```
 
 ### 2. 访问面板
