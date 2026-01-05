@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# ==========================================
-# 项目: Nginx Proxy Manager 综合管理脚本 (标准版)
-# 特点: 强制 Root 检测，不修改系统别名
-# ==========================================
+# ========================================================
+# 项目名称: Nginx Proxy Manager 综合管理脚本
+# 项目作者: facker668
+# 联系邮箱: tao356334@gmail.com
+# 项目特点: 强制 Root 检测，适配新版 NPM 初始化创建流程
+# ========================================================
 
 # 颜色定义
 RED='\033[0;31m'
@@ -23,7 +25,8 @@ fi
 show_menu() {
     clear
     echo -e "${CYAN}==================================================${NC}"
-    echo -e "${CYAN}        Nginx Proxy Manager 综合管理脚本           ${NC}"
+    echo -e "${CYAN}        Nginx Proxy Manager 综合管理脚本          ${NC}"
+    echo -e "${CYAN}    作者: facker668 | Email: tao356334@gmail.com  ${NC}"
     echo -e "${CYAN}==================================================${NC}"
     echo -e "${GREEN}  1.${NC} 安装 Docker 环境"
     echo -e "${GREEN}  2.${NC} 安装 Nginx Proxy Manager (NPM)"
@@ -50,8 +53,21 @@ install_npm() {
         echo -e "${RED}错误：请先执行选项 1 安装 Docker 环境！${NC}"
         return
     fi
+
+    # 预检查端口占用 (80, 81, 443)
+    echo -e "${YELLOW}正在检查端口占用情况...${NC}"
+    for port in 80 81 443; do
+        if command -v lsof &> /dev/null; then
+            if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null ; then
+                echo -e "${RED}错误：端口 $port 已被占用，请先关闭相关服务后再安装。${NC}"
+                return
+            fi
+        fi
+    done
+
     echo -e "\n${YELLOW}开始安装 Nginx Proxy Manager...${NC}"
     mkdir -p /opt/npm && cd /opt/npm
+    
     cat <<EOF > docker-compose.yml
 version: '3.8'
 services:
@@ -66,14 +82,23 @@ services:
       - ./data:/data
       - ./letsencrypt:/etc/letsencrypt
 EOF
+
     docker compose up -d
+    
     if [ $? -eq 0 ]; then
-        IP=$(curl -s ifconfig.me)
-        echo -e "${GREEN}NPM 安装成功！管理地址: http://${IP}:81${NC}"
-        echo -e "${YELLOW}初始账号: admin@example.com${NC}"
-        echo -e "${YELLOW}初始密码: changeme${NC}"
+        IP=$(curl -s --connect-timeout 5 ifconfig.me || echo "您的服务器IP")
+        echo -e "\n${CYAN}==================================================${NC}"
+        echo -e "${GREEN}         Nginx Proxy Manager 安装成功！          ${NC}"
+        echo -e "${CYAN}==================================================${NC}"
+        echo -e "管理面板地址: ${YELLOW}http://${IP}:81${NC}"
+        echo -e ""
+        echo -e "${GREEN}首次登录指引：${NC}"
+        echo -e " 1. 请在浏览器中访问上方管理地址"
+        echo -e " 2. 系统将引导您${YELLOW}创建管理员账号${NC}（姓名、邮箱和密码）"
+        echo -e " 3. 请务必妥善记录您自己设置的凭据"
+        echo -e "${CYAN}==================================================${NC}"
     else
-        echo -e "${RED}安装失败。请检查 80/81/443 端口是否被占用。${NC}"
+        echo -e "${RED}安装失败。请检查网络连接或确保 80/81/443 端口未被占用。${NC}"
     fi
 }
 
@@ -95,9 +120,9 @@ uninstall_docker() {
     read -p "确定彻底卸载 Docker 环境吗? (y/n): " confirm
     if [ "$confirm" == "y" ]; then
         echo -e "${YELLOW}正在卸载 Docker...${NC}"
-        if [ -f /etc/debian_version ]; then
+        if command -v apt-get &> /dev/null; then
             apt-get purge -y docker-ce docker-ce-cli containerd.io && apt-get autoremove -y
-        else
+        elif command -v yum &> /dev/null; then
             yum remove -y docker-ce docker-ce-cli containerd.io
         fi
         echo -e "${GREEN}Docker 已成功卸载。${NC}"
@@ -113,8 +138,9 @@ while true; do
         2) install_npm ;;
         3) uninstall_npm ;;
         4) uninstall_docker ;;
-        0) exit 0 ;;
-        *) echo -e "${RED}无效选项！${NC}" ;;
+        0) echo -e "${GREEN}感谢使用，再见！${NC}"; exit 0 ;;
+        *) echo -e "${RED}无效选项，请输入 0-4 之间的数字！${NC}" ;;
     esac
-    read -p "按回车键返回主菜单..."
+    echo ""
+    read -p "按回车键返回主菜单..." dummy
 done
