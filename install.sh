@@ -90,7 +90,21 @@ EOF
     fi
     
     if [ $? -eq 0 ]; then
-        IP=$(curl -s --connect-timeout 5 ifconfig.me || echo "您的服务器IP")
+        # --- 获取 IP 逻辑修改开始 ---
+        # 优先尝试获取 IPv4
+        IP=$(curl -s4m5 ifconfig.me || curl -s4m5 icanhazip.com)
+        
+        # 如果获取不到 IPv4，则尝试获取 IPv6
+        if [ -z "$IP" ]; then
+            IP_V6=$(curl -s6m5 ifconfig.me || curl -s6m5 icanhazip.com)
+            if [ -n "$IP_V6" ]; then
+                IP="[$IP_V6]" # IPv6 需要加中括号
+            else
+                IP="您的服务器IP"
+            fi
+        fi
+        # --- 获取 IP 逻辑修改结束 ---
+
         echo -e "\n${CYAN}==================================================${NC}"
         echo -e "${GREEN}         Nginx Proxy Manager 安装成功！          ${NC}"
         echo -e "${CYAN}==================================================${NC}"
