@@ -189,8 +189,8 @@ uninstall_npm() {
 
 uninstall_docker() {
   echo -e "${RED}警告：此操作会删除整机 Docker 环境，可能影响其他容器业务！${NC}"
-  read -r -p "请输入 YES_I_KNOW 继续: " confirm
-  if [[ "${confirm}" == "YES_I_KNOW" ]]; then
+  read -r -p "确定彻底卸载 Docker 环境吗? (y/n): " confirm
+  if [[ "${confirm}" == "y" ]]; then
     echo -e "${YELLOW}正在卸载 Docker...${NC}"
     if command -v apt-get >/dev/null 2>&1; then
       apt-get purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || true
